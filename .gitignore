@@ -37,3 +37,4 @@
 /.cache/
 /.env
 .vscode/
+CMakeLists.txt.user
