@@ -25,20 +25,6 @@ endif()
 # --- Fetch dependencies ---
 include(FetchContent)
 
-# nlohmann_json
-FetchContent_Declare(
-  nlohmann_json
-  GIT_REPOSITORY https://github.com/nlohmann/json.git
-  GIT_TAG v3.11.2
-)
-FetchContent_GetProperties(nlohmann_json)
-if(NOT nlohmann_json_POPULATED)
-  FetchContent_Populate(nlohmann_json)
-endif()
-add_library(nlohmann_json INTERFACE)
-target_include_directories(nlohmann_json INTERFACE ${nlohmann_json_SOURCE_DIR}/include)
-
-# earcut.hpp
 FetchContent_Declare(
   earcut
   GIT_REPOSITORY https://github.com/mapbox/earcut.hpp.git
@@ -57,7 +43,7 @@ target_include_directories(libtriangulation PUBLIC include)
 target_sources(libtriangulation PRIVATE src/triangulation.cpp)
 
 # Link dependencies
-target_link_libraries(libtriangulation PUBLIC nlohmann_json earcut)
+target_link_libraries(libtriangulation PUBLIC earcut)
 
 # --- Tests ---
 if(BUILD_TESTING)
