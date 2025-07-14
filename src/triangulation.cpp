@@ -23,27 +23,4 @@ Triangles Triangulator::triangulate(const Polygon &polygon) const {
   return triangles;
 }
 
-Polygon points_from_json(const nlohmann::json &json_points) {
-  Polygon polygon;
-  polygon.reserve(json_points.size());
-  for (const auto &point : json_points) {
-    polygon.emplace_back(Point{point[0].get<double>(), point[1].get<double>()});
-  }
-  return polygon;
-}
-
-nlohmann::json triangles_to_json(const Triangles &triangles) {
-  auto json_triangles = nlohmann::json::array();
-
-  for (const auto &triangle : triangles) {
-    auto json_triangle = nlohmann::json::array();
-
-    for (const auto &point : triangle) {
-      json_triangle.push_back({x(point), y(point)});
-    }
-    json_triangles.push_back(json_triangle);
-  }
-  return json_triangles;
-}
-
 } // namespace triangulation

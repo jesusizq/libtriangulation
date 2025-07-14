@@ -1,8 +1,5 @@
 #include "triangulation.h"
-#include <algorithm>
 #include <gtest/gtest.h>
-#include <iostream> // Added for debugging
-#include <nlohmann/json.hpp>
 #include <set>
 
 // Helper to create a canonical representation of a triangle's points
@@ -43,29 +40,4 @@ TEST_F(TriangulationTest, TriangulateSquare) {
                              (t1 == expected2 && t2 == expected1);
 
   EXPECT_TRUE(valid_triangulation);
-}
-
-TEST_F(TriangulationTest, JsonToPoints) {
-  nlohmann::json json_points = {{0, 0}, {1, 0}, {1, 1}, {0, 1}};
-  const auto polygon{triangulation::points_from_json(json_points)};
-
-  ASSERT_EQ(polygon.size(), 4);
-  EXPECT_EQ(triangulation::x(polygon[0]), 0);
-  EXPECT_EQ(triangulation::y(polygon[0]), 0);
-  EXPECT_EQ(triangulation::x(polygon[1]), 1);
-  EXPECT_EQ(triangulation::y(polygon[1]), 0);
-  EXPECT_EQ(triangulation::x(polygon[2]), 1);
-  EXPECT_EQ(triangulation::y(polygon[2]), 1);
-  EXPECT_EQ(triangulation::x(polygon[3]), 0);
-  EXPECT_EQ(triangulation::y(polygon[3]), 1);
-}
-
-TEST_F(TriangulationTest, TrianglesToJson) {
-  triangulation::Triangulator triangulator;
-  const auto triangles{triangulator.triangulate(square_polygon)};
-  auto json_triangles = triangulation::triangles_to_json(triangles);
-
-  ASSERT_EQ(json_triangles.size(), 2);
-  ASSERT_EQ(json_triangles[0].size(), 3);
-  ASSERT_EQ(json_triangles[0][0].size(), 2);
 }

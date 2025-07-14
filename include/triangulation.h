@@ -2,7 +2,6 @@
 #define TRIANGULATION_H
 
 #include <array>
-#include <nlohmann/json.hpp>
 #include <vector>
 
 namespace triangulation {
@@ -31,22 +30,6 @@ public:
    */
   Triangles triangulate(const Polygon &polygon) const;
 };
-
-/**
- * @brief Parses a JSON object into a Polygon.
- *
- * @param json_points A nlohmann::json object containing an array of points.
- * @return A Polygon object.
- */
-Polygon points_from_json(const nlohmann::json &json_points);
-
-/**
- * @brief Serializes a vector of triangles into a JSON object.
- *
- * @param triangles The triangles to serialize.
- * @return A nlohmann::json object.
- */
-nlohmann::json triangles_to_json(const Triangles &triangles);
 
 } // namespace triangulation
 
