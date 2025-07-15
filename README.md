@@ -1,8 +1,8 @@
 # libtriangulation
 
-A C++ library for 2D polygon triangulation.
+A C++ library for 2D polygon triangulation with WebAssembly (WASM) support.
 
-This library takes a list of 2D points defining a polygon and returns a list of triangles that tile the polygon.
+This library takes a list of 2D points defining a polygon and returns triangulation indices that can be used for rendering or further processing. It supports both native C++ compilation and WebAssembly compilation for use in web browsers.
 
 ## Dependencies
 
@@ -16,15 +16,32 @@ All dependencies are fetched automatically at configure time using CMake's `Fetc
 
 ## How to Build and Test
 
+### Native C++ Build
+
 You need to have `CMake` and a C++17 compiler installed.
 
 ```bash
-  mkdir build && cd build && cmake .. && make && ctest
+mkdir build && cd build && cmake .. && make && ctest
 ```
 
-## Usage
+### WebAssembly Build
 
-To use the library, include the `triangulation.h` header. You can then use the `Triangulator` class to perform triangulation and the helper functions to handle JSON conversion.
+To build for WebAssembly (for use in web browsers), you need the Emscripten SDK:
+
+```bash
+# Install Emscripten SDK first
+# Then build with WASM support
+mkdir build_wasm && cd build_wasm
+emcmake cmake .. -DBUILD_WASM=ON
+make
+```
+
+This generates:
+
+- `liblibtriangulation.js` - JavaScript wrapper with embedded WASM
+- Optional: `liblibtriangulation.wasm` - Separate WASM binary
+
+The WASM build uses Emscripten's embind to provide a JavaScript API that mirrors the C++ interface.
 
 ## Algorithm Choice: Ear Clipping (`mapbox/earcut.hpp`)
 
