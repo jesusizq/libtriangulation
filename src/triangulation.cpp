@@ -10,8 +10,7 @@ Indices Triangulator::triangulate(const Polygon &polygon) const {
   polygons.push_back(polygon);
 
   // Run the triangulation
-  const auto indices{mapbox::earcut(polygons)};
-  return indices;
+  return mapbox::earcut(polygons);
 }
 
 } // namespace triangulation

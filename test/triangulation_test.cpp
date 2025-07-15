@@ -10,10 +10,12 @@ get_canonical_triangle_from_indices(const triangulation::Polygon &polygon,
                                     size_t triangle_index) {
   std::set<std::pair<double, double>> points;
   size_t base_idx = triangle_index * 3;
+
   for (size_t i = 0; i < 3; ++i) {
     const auto &p = polygon[indices[base_idx + i]];
     points.insert({triangulation::x(p), triangulation::y(p)});
   }
+
   return points;
 }
 
@@ -24,53 +26,51 @@ get_canonical_triangle(const triangulation::Polygon &triangle) {
   for (const auto &p : triangle) {
     points.insert({triangulation::x(p), triangulation::y(p)});
   }
+
   return points;
 }
 
 // Test fixture for triangulation tests
 class TriangulationTest : public ::testing::Test {
 protected:
-  void SetUp() override {
-    // A simple square polygon
-    square_polygon = {{0, 0}, {1, 0}, {1, 1}, {0, 1}};
-  }
+  void SetUp() override { m_squarePolygon = {{0, 0}, {1, 0}, {1, 1}, {0, 1}}; }
 
-  triangulation::Polygon square_polygon;
+  triangulation::Polygon m_squarePolygon;
 };
 
 TEST_F(TriangulationTest, TriangulateSquare) {
   triangulation::Triangulator triangulator;
-  const auto indices{triangulator.triangulate(square_polygon)};
+  const auto indices{triangulator.triangulate(m_squarePolygon)};
 
   // For a square, we expect 2 triangles (6 indices)
   ASSERT_EQ(indices.size(), 6);
   ASSERT_EQ(indices.size() % 3, 0); // Must be multiple of 3
 
-  size_t num_triangles = indices.size() / 3;
-  ASSERT_EQ(num_triangles, 2);
+  size_t numTriangles = indices.size() / 3;
+  ASSERT_EQ(numTriangles, 2);
 
   // Verify all indices are valid
   for (const auto &idx : indices) {
-    EXPECT_LT(idx, square_polygon.size());
+    EXPECT_LT(idx, m_squarePolygon.size());
   }
 
-  auto t1 = get_canonical_triangle_from_indices(square_polygon, indices, 0);
-  auto t2 = get_canonical_triangle_from_indices(square_polygon, indices, 1);
+  auto t1 = get_canonical_triangle_from_indices(m_squarePolygon, indices, 0);
+  auto t2 = get_canonical_triangle_from_indices(m_squarePolygon, indices, 1);
 
   // Define the two expected triangles canonically
   auto expected1 = get_canonical_triangle({{0, 0}, {1, 0}, {1, 1}});
   auto expected2 = get_canonical_triangle({{0, 0}, {1, 1}, {0, 1}});
 
   // The set of generated triangles must match the set of expected triangles
-  bool valid_triangulation = (t1 == expected1 && t2 == expected2) ||
-                             (t1 == expected2 && t2 == expected1);
+  bool validTriangulation = (t1 == expected1 && t2 == expected2) ||
+                            (t1 == expected2 && t2 == expected1);
 
-  EXPECT_TRUE(valid_triangulation);
+  EXPECT_TRUE(validTriangulation);
 }
 
 TEST_F(TriangulationTest, TriangulateComplexPolygon) {
-  // Test with a more complex polygon (like points_4.json)
-  triangulation::Polygon complex_polygon = {
+  // Test with a complex polygon
+  triangulation::Polygon complexPolygon = {
       {-6.0, 6.0},
       {1.87341821193695, 3.77215147018433},
       {6.98734188079834, 5.29113864898682},
@@ -85,7 +85,7 @@ TEST_F(TriangulationTest, TriangulateComplexPolygon) {
       {-11.8987340927124, 0.177215337753296}};
 
   triangulation::Triangulator triangulator;
-  const auto indices{triangulator.triangulate(complex_polygon)};
+  const auto indices{triangulator.triangulate(complexPolygon)};
 
   // For complex polygons, earcut may produce fewer triangles than (n-2) due to
   // self-intersections or optimizations. We just verify the result is
@@ -96,12 +96,12 @@ TEST_F(TriangulationTest, TriangulateComplexPolygon) {
   // Should have at least a few triangles but not more than the theoretical
   // maximum
   size_t num_triangles = indices.size() / 3;
-  size_t max_triangles = complex_polygon.size() - 2;
+  size_t max_triangles = complexPolygon.size() - 2;
   EXPECT_GT(num_triangles, 0);
   EXPECT_LE(num_triangles, max_triangles);
 
   // Verify all indices are valid
   for (const auto &idx : indices) {
-    EXPECT_LT(idx, complex_polygon.size());
+    EXPECT_LT(idx, complexPolygon.size());
   }
 }
