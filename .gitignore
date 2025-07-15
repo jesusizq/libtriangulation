@@ -33,6 +33,7 @@
 
 # User dependent files
 /build/
+/build_*/
 /.vscode/
 /.cache/
 /.env
