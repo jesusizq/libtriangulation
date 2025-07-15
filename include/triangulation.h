@@ -2,13 +2,14 @@
 #define TRIANGULATION_H
 
 #include <array>
+#include <cstdint>
 #include <vector>
 
 namespace triangulation {
 
 using Point = std::array<double, 2>;
 using Polygon = std::vector<Point>;
-using Triangles = std::vector<Polygon>;
+using Indices = std::vector<std::uint32_t>;
 
 // Helper functions to access Point elements like .x and .y
 inline double &x(Point &p) { return p[0]; }
@@ -25,10 +26,9 @@ public:
    * @brief Triangulates a 2D polygon.
    *
    * @param polygon A vector of points representing the vertices of the polygon.
-   * @return A vector of triangles, where each triangle is a vector of 3
-   * points.
+   * @return A vector of indices representing the triangles.
    */
-  Triangles triangulate(const Polygon &polygon) const;
+  Indices triangulate(const Polygon &polygon) const;
 };
 
 } // namespace triangulation
