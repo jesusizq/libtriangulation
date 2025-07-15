@@ -8,11 +8,10 @@ This library takes a list of 2D points defining a polygon and returns triangulat
 
 The library uses the following third-party libraries:
 
-- [nlohmann/json](https://github.com/nlohmann/json): For parsing and serializing JSON data.
 - [mapbox/earcut.hpp](https://github.com/mapbox/earcut.hpp): For the triangulation algorithm.
 - [GoogleTest](https://github.com/google/googletest): For unit testing.
 
-All dependencies are fetched automatically at configure time using CMake's `FetchContent`.
+All dependencies are fetched automatically at configure time.
 
 ## How to Build and Test
 
@@ -21,25 +20,23 @@ All dependencies are fetched automatically at configure time using CMake's `Fetc
 You need to have `CMake` and a C++17 compiler installed.
 
 ```bash
-mkdir build && cd build && cmake .. && make && ctest
+mkdir build && cd build && cmake .. -DBUILD_TESTING=ON && make -j$(nproc) && ctest
 ```
 
 ### WebAssembly Build
 
-To build for WebAssembly (for use in web browsers), you need the Emscripten SDK:
+To build for WebAssembly (for use in web browsers), you need the Emscripten SDK. You would build from the repository who uses this library:
 
 ```bash
 # Install Emscripten SDK first
 # Then build with WASM support
-mkdir build_wasm && cd build_wasm
-emcmake cmake .. -DBUILD_WASM=ON
-make
+mkdir build_wasm && cd build_wasm && emcmake cmake .. -DBUILD_WASM=ON && make -j$(nproc)
 ```
 
 This generates:
 
 - `liblibtriangulation.js` - JavaScript wrapper with embedded WASM
-- Optional: `liblibtriangulation.wasm` - Separate WASM binary
+- `liblibtriangulation.wasm` - Separate WASM binary
 
 The WASM build uses Emscripten's embind to provide a JavaScript API that mirrors the C++ interface.
 
