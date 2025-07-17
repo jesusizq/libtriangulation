@@ -9,6 +9,20 @@ double get_x(const Point &p) { return p[0]; }
 void set_x(Point &p, double val) { p[0] = val; }
 double get_y(const Point &p) { return p[1]; }
 void set_y(Point &p, double val) { p[1] = val; }
+
+// Wrapper struct to return both vertices and indices
+struct TriangulationResult {
+  Polygon vertices;
+  Indices indices;
+};
+
+// Wrapper function that returns both vertices and indices
+TriangulationResult triangulateWithVertices(const Triangulator &triangulator,
+                                            const Polygon &polygon) {
+  TriangulationResult result;
+  result.indices = triangulator.triangulate(polygon, result.vertices);
+  return result;
+}
 } // namespace
 
 EMSCRIPTEN_BINDINGS(libtriangulation_module) {
@@ -19,9 +33,14 @@ EMSCRIPTEN_BINDINGS(libtriangulation_module) {
   register_vector<Point>("Polygon");
   register_vector<std::uint32_t>("Indices");
 
+  value_object<TriangulationResult>("TriangulationResult")
+      .field("vertices", &TriangulationResult::vertices)
+      .field("indices", &TriangulationResult::indices);
+
   class_<Triangulator>("Triangulator")
       .constructor<>()
       .function("triangulate",
                 static_cast<Indices (Triangulator::*)(const Polygon &) const>(
-                    &Triangulator::triangulate));
+                    &Triangulator::triangulate))
+      .function("triangulateWithVertices", &triangulateWithVertices);
 }
