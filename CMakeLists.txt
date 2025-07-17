@@ -38,13 +38,35 @@ endif()
 add_library(earcut INTERFACE)
 target_include_directories(earcut INTERFACE ${earcut_SOURCE_DIR}/include)
 
+# Add Clipper2 for handling self-intersecting polygons
+FetchContent_Declare(
+  Clipper2
+  GIT_REPOSITORY https://github.com/AngusJohnson/Clipper2.git
+  GIT_TAG Clipper2_1.2.2
+)
+FetchContent_MakeAvailable(Clipper2)
+
+# Build Clipper2 as a static library
+add_library(Clipper2_lib STATIC
+  ${clipper2_SOURCE_DIR}/CPP/Clipper2Lib/src/clipper.engine.cpp
+  ${clipper2_SOURCE_DIR}/CPP/Clipper2Lib/src/clipper.offset.cpp
+  ${clipper2_SOURCE_DIR}/CPP/Clipper2Lib/src/clipper.rectclip.cpp
+)
+target_include_directories(Clipper2_lib PUBLIC ${clipper2_SOURCE_DIR}/CPP/Clipper2Lib/include)
+
+# Set position independent code for linking into shared libraries
+set_property(TARGET Clipper2_lib PROPERTY POSITION_INDEPENDENT_CODE ON)
+
+# Create an alias for easier linking
+add_library(Clipper2 ALIAS Clipper2_lib)
+
 # --- Library ---
 add_library(libtriangulation)
 target_include_directories(libtriangulation PUBLIC include)
 target_sources(libtriangulation PRIVATE src/triangulation.cpp)
 
 # Link dependencies
-target_link_libraries(libtriangulation PUBLIC earcut)
+target_link_libraries(libtriangulation PUBLIC earcut Clipper2)
 
 # --- Emscripten specific ---
 if(BUILD_WASM)
@@ -57,7 +79,7 @@ if(BUILD_WASM)
     )
     
     target_include_directories(libtriangulation_wasm PUBLIC include)
-    target_link_libraries(libtriangulation_wasm PUBLIC earcut)
+    target_link_libraries(libtriangulation_wasm PUBLIC earcut Clipper2)
     
     # Set proper output for WASM
     set_target_properties(libtriangulation_wasm PROPERTIES 

@@ -1,17 +1,55 @@
 # libtriangulation
 
-A C++ library for 2D polygon triangulation with WebAssembly (WASM) support.
+A C++ library for 2D polygon triangulation with **advanced self-intersection handling** and WebAssembly (WASM) support.
 
-This library takes a list of 2D points defining a polygon and returns triangulation indices that can be used for rendering or further processing. It supports both native C++ compilation and WebAssembly compilation for use in web browsers.
+This library takes a list of 2D points defining a polygon and returns triangulation indices that can be used for rendering or further processing. It automatically detects and resolves self-intersections using Clipper2, then applies optimal triangulation algorithms. The library supports both native C++ compilation and WebAssembly compilation for use in web browsers.
+
+## Features
+
+- **Self-Intersection Detection & Resolution**: Automatically handles complex self-intersecting polygons
+- **Dual Algorithm Approach**:
+  - **Clipper2** for intersection resolution
+  - **Earcut** for high-performance triangulation of simple polygons
+- **WebAssembly Support**: Full WASM compilation with JavaScript bindings
+- **Comprehensive Testing**: Extensive test suite including complex polygon cases
+- **Easy Integration**: Header-only dependencies with automatic CMake fetching
+
+## Algorithm Architecture
+
+### 1. **Input Analysis**
+
+The library first analyzes input polygons for self-intersections using a robust line-segment intersection algorithm.
+
+### 2. **Intersection Resolution (Clipper2)**
+
+For self-intersecting polygons, the library uses [Clipper2](https://github.com/AngusJohnson/Clipper2) to:
+
+- Resolve all intersection points
+- Split the polygon into separate non-overlapping regions
+- Maintain proper polygon topology
+
+### 3. **Optimized Triangulation (Earcut)**
+
+Each resolved region is triangulated using [mapbox/earcut.hpp](https://github.com/mapbox/earcut.hpp):
+
+- High-performance ear clipping algorithm
+- Handles simple polygons without holes
+- Produces consistent triangle winding
+
+### 4. **Result Combination**
+
+All triangulated regions are combined into:
+
+- A unified vertex array (resolved geometry)
+- A corresponding index array (triangle references)
 
 ## Dependencies
 
-The library uses the following third-party libraries:
+The library automatically fetches these dependencies at configure time:
 
-- [mapbox/earcut.hpp](https://github.com/mapbox/earcut.hpp): For the triangulation algorithm.
-- [GoogleTest](https://github.com/google/googletest): For unit testing.
-
-All dependencies are fetched automatically at configure time.
+- **[mapbox/earcut.hpp](https://github.com/mapbox/earcut.hpp)**: Core triangulation algorithm
+- **[Clipper2](https://github.com/AngusJohnson/Clipper2)**: Self-intersection resolution
+- **[GoogleTest](https://github.com/google/googletest)**: Unit testing framework (when testing enabled)
 
 ## How to Build and Test
 
@@ -25,7 +63,7 @@ mkdir build && cd build && cmake .. -DBUILD_TESTING=ON && make -j$(nproc) && cte
 
 ### WebAssembly Build
 
-To build for WebAssembly (for use in web browsers), you need the Emscripten SDK. You would build from the repository who uses this library:
+To build for WebAssembly (for use in web browsers), you need the Emscripten SDK:
 
 ```bash
 # Install Emscripten SDK first
@@ -35,30 +73,47 @@ mkdir build_wasm && cd build_wasm && emcmake cmake .. -DBUILD_WASM=ON && make -j
 
 This generates:
 
-- `liblibtriangulation.js` - JavaScript wrapper with embedded WASM
-- `liblibtriangulation.wasm` - Separate WASM binary
+- `libtriangulation.js` - JavaScript wrapper with embedded or separate WASM
+- `libtriangulation.wasm` - WebAssembly binary
 
 The WASM build uses Emscripten's embind to provide a JavaScript API that mirrors the C++ interface.
 
-## Algorithm Choice: Ear Clipping (`mapbox/earcut.hpp`)
+## Algorithm Design Rationale
 
-For this project, we chose the **Ear Clipping** algorithm as implemented in the `mapbox/earcut.hpp` library.
+### Why Ear Clipping + Clipper2?
 
-**Justification:**
+**Ear Clipping (mapbox/earcut.hpp):**
 
-- **Simplicity and Speed:** Ear clipping is relatively simple to implement and understand. It is very efficient for simple polygons without holes, which is the case for this project's requirements.
-- **Lightweight:** `mapbox/earcut.hpp` is a header-only library, which makes it extremely easy to integrate into a CMake project with no complex build steps or dependencies.
-- **Robustness:** The Mapbox implementation is a port of a widely-used JavaScript library and is well-tested and reliable.
+- **High Performance**: Extremely fast for simple polygons
+- **Lightweight**: Header-only library with minimal dependencies
+- **Proven Reliability**: Battle-tested in production applications
+- **Optimal for Simple Cases**: Perfect for non-self-intersecting polygons
 
-### Comparison with Delaunay Triangulation
+**Clipper2 Integration:**
 
-Another common triangulation method is **Delaunay Triangulation**.
+- **Handles Complex Cases**: Resolves self-intersections that would break ear clipping
+- **Robust Geometry Processing**: Professional-grade computational geometry
+- **Maintains Topology**: Preserves proper polygon structure during resolution
+- **Future-Proof**: Extensible for additional boolean operations
 
-- **Delaunay Triangulation:** This method produces triangles that are as close to equilateral as possible, maximizing the minimum angle of any triangle in the mesh. This "quality" is very desirable in many applications, such as finite element analysis and 3D graphics, as it avoids long, skinny triangles.
+### Alternative Approaches Considered
 
-- **Trade-offs:**
-  - **Complexity:** Delaunay algorithms are generally more complex to implement than ear clipping.
-  - **Performance:** For simple polygon triangulation, ear clipping can be faster. Delaunay triangulation is more powerful and can handle more complex inputs (like point sets that are not forming a simple polygon), but this power is not needed for the current task.
-  - **Output Quality:** Delaunay produces higher-quality meshes. However, for the simple visualization required by this project, the quality of the ear clipping output is perfectly sufficient.
+**Delaunay Triangulation:**
 
-Given the project's constraints and goals, the lightweight and fast nature of `mapbox/earcut.hpp` makes it a more pragmatic and suitable choice than a more complex Delaunay-based solution.
+- **Pros**: Higher quality triangles, better for numerical simulations
+- **Cons**: More complex, slower for simple cases, overkill for visualization
+- **Verdict**: Unnecessary complexity for this use case
+
+**Constrained Delaunay:**
+
+- **Pros**: Handles arbitrary constraints and holes
+- **Cons**: Significantly more complex implementation
+- **Verdict**: Would require major architectural changes
+
+**Pure Clipper2 Triangulation:**
+
+- **Pros**: Unified approach for all cases
+- **Cons**: Slower than earcut for simple polygons
+- **Verdict**: Our hybrid approach gets the best of both worlds
+
+The current **hybrid architecture** provides optimal performance for simple polygons while gracefully handling complex self-intersecting cases.

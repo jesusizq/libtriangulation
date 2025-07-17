@@ -105,3 +105,41 @@ TEST_F(TriangulationTest, TriangulateComplexPolygon) {
     EXPECT_LT(idx, complexPolygon.size());
   }
 }
+
+TEST_F(TriangulationTest, TriangulateSelfIntersectingPolygon) {
+  // Test with a self-intersecting polygon (figure-8 shape)
+  triangulation::Polygon selfIntersectingPolygon = {
+      {0.0, 0.0}, // Bottom left
+      {2.0, 2.0}, // Top right
+      {2.0, 0.0}, // Bottom right
+      {0.0, 2.0}  // Top left
+  };
+  // This creates a figure-8 or bow-tie shape with self-intersection at (1,1)
+
+  triangulation::Triangulator triangulator;
+
+  // Test the basic triangulate method
+  const auto indices = triangulator.triangulate(selfIntersectingPolygon);
+  ASSERT_GT(indices.size(), 0);     // Should produce some triangles
+  ASSERT_EQ(indices.size() % 3, 0); // Must be multiple of 3
+
+  // Test the overloaded method that returns resolved vertices
+  triangulation::Polygon resolvedVertices;
+  const auto indicesWithVertices =
+      triangulator.triangulate(selfIntersectingPolygon, resolvedVertices);
+
+  ASSERT_GT(indicesWithVertices.size(), 0);     // Should produce some triangles
+  ASSERT_EQ(indicesWithVertices.size() % 3, 0); // Must be multiple of 3
+  ASSERT_GE(resolvedVertices.size(), 3); // Should have at least 3 vertices
+
+  // Verify all indices are valid for the resolved vertices
+  for (const auto &idx : indicesWithVertices) {
+    EXPECT_LT(idx, resolvedVertices.size());
+  }
+
+  // For a self-intersecting polygon, the resolved vertices should be different
+  // from the original polygon (usually more vertices due to intersection
+  // resolution) Note: The exact number depends on how Clipper2 resolves the
+  // intersections
+  EXPECT_GE(resolvedVertices.size(), selfIntersectingPolygon.size());
+}
