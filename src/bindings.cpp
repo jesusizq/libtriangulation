@@ -21,5 +21,7 @@ EMSCRIPTEN_BINDINGS(libtriangulation_module) {
 
   class_<Triangulator>("Triangulator")
       .constructor<>()
-      .function("triangulate", &Triangulator::triangulate);
+      .function("triangulate",
+                static_cast<Indices (Triangulator::*)(const Polygon &) const>(
+                    &Triangulator::triangulate));
 }
