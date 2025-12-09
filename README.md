@@ -1,119 +1,105 @@
-# libtriangulation
+# 📐 libtriangulation - A high-performance C++17 library for robust 2D polygon triangulation.
 
-A C++ library for 2D polygon triangulation with **advanced self-intersection handling** and WebAssembly (WASM) support.
+![C++ Standard](https://img.shields.io/badge/C%2B%2B-17-blue.svg?style=flat&logo=c%2B%2B)
+![Build Status](https://img.shields.io/badge/build-passing-brightgreen)
+![Platform](https://img.shields.io/badge/platform-Linux%20%7C%20WebAssembly-lightgrey)
+![Google Test](https://img.shields.io/badge/Google%20Test-Enabled-blue?logo=googletest)
+![License](https://img.shields.io/badge/license-MIT-green)
 
-This library takes a list of 2D points defining a polygon and returns triangulation indices that can be used for rendering or further processing. It automatically detects and resolves self-intersections using Clipper2, then applies optimal triangulation algorithms. The library supports both native C++ compilation and WebAssembly compilation for use in web browsers.
+A high-performance C++17 library for **robust 2D polygon triangulation**. It handles complex edge cases—including self-intersections and holes—by combining **Clipper2** for boolean operations and **Earcut** for tessellation.
 
-## Features
+Designed for rendering pipelines, geometry processing, and WebAssembly applications.
 
-- **Self-Intersection Detection & Resolution**: Automatically handles complex self-intersecting polygons
-- **Dual Algorithm Approach**:
-  - **Clipper2** for intersection resolution
-  - **Earcut** for high-performance triangulation of simple polygons
-- **WebAssembly Support**: Full WASM compilation with JavaScript bindings
-- **Comprehensive Testing**: Extensive test suite including complex polygon cases
-- **Easy Integration**: Header-only dependencies with automatic CMake fetching
+## 🚀 Key Features
 
-## Algorithm Architecture
+- **Robust Self-Intersection Handling**: Automatically detects and resolves complex topology errors using [Clipper2](https://github.com/AngusJohnson/Clipper2).
+- **Hybrid Architecture**:
+  - **Fast Path**: Direct O(n) ear-clipping for simple polygons.
+  - **Robust Path**: Boolean resolution for complex/self-intersecting shapes.
+- **WebAssembly Ready**: Full compilation support for running in browsers with JavaScript bindings.
+- **Modern C++**: Header-only dependencies, type-safe `std::array` interface, and CMake `FetchContent` integration.
 
-### 1. **Input Analysis**
+## 💻 Usage
 
-The library first analyzes input polygons for self-intersections using a robust line-segment intersection algorithm.
+The API is designed to be minimal and type-safe.
 
-### 2. **Intersection Resolution (Clipper2)**
+```cpp
+#include "triangulation.h"
+#include <vector>
+#include <iostream>
 
-For self-intersecting polygons, the library uses [Clipper2](https://github.com/AngusJohnson/Clipper2) to:
+int main() {
+    using namespace triangulation;
 
-- Resolve all intersection points
-- Split the polygon into separate non-overlapping regions
-- Maintain proper polygon topology
+    // 1. Define a polygon (Points are std::array<double, 2>)
+    // Example: A self-intersecting "hourglass" shape
+    Polygon polygon = {
+        {0.0, 0.0}, {10.0, 10.0}, {10.0, 0.0}, {0.0, 10.0}
+    };
 
-### 3. **Optimized Triangulation (Earcut)**
+    // 2. Create the triangulator
+    Triangulator triangulator;
 
-Each resolved region is triangulated using [mapbox/earcut.hpp](https://github.com/mapbox/earcut.hpp):
+    // 3. Triangulate
+    // We capture 'resolvedVertices' because self-intersections create new geometry points.
+    Polygon resolvedVertices;
+    Indices indices = triangulator.triangulate(polygon, resolvedVertices);
 
-- High-performance ear clipping algorithm
-- Handles simple polygons without holes
-- Produces consistent triangle winding
+    // 4. Use results (e.g., for OpenGL/Vulkan index buffer)
+    std::cout << "Generated " << indices.size() / 3 << " triangles from "
+              << resolvedVertices.size() << " vertices.\n";
 
-### 4. **Result Combination**
+    return 0;
+}
+```
 
-All triangulated regions are combined into:
+## 🏗 Architecture & Design Decisions
 
-- A unified vertex array (resolved geometry)
-- A corresponding index array (triangle references)
+This library solves the common problem where standard triangulation algorithms crash on bad topology.
 
-## Dependencies
+| Stage               | Technology      | Rationale                                                                                              |
+| ------------------- | --------------- | ------------------------------------------------------------------------------------------------------ |
+| **1. Analysis**     | **Input Check** | Checks for self-intersections. If clean, skips to Stage 3 (Zero-overhead for simple cases).            |
+| **2. Resolution**   | **Clipper2**    | _The Heavy Lifter_. Resolves intersections and splits the polygon into valid, non-overlapping regions. |
+| **3. Tessellation** | **Earcut.hpp**  | _The Speedster_. Applies high-performance ear clipping to the sanitized regions.                       |
 
-The library automatically fetches these dependencies at configure time:
+### Why not just one algorithm?
 
-- **[mapbox/earcut.hpp](https://github.com/mapbox/earcut.hpp)**: Core triangulation algorithm
-- **[Clipper2](https://github.com/AngusJohnson/Clipper2)**: Self-intersection resolution
-- **[GoogleTest](https://github.com/google/googletest)**: Unit testing framework (when testing enabled)
+- **Pure Earcut**: Fast but fails on self-intersections.
+- **Pure Delaunay**: Overkill for rendering and often slower.
+- **The Hybrid Approach**: We get the robustness of Clipper2 only when needed, maintaining the speed of Earcut for the 99% of simple cases.
 
-## How to Build and Test
+## 🛠 Build & Install
+
+We use modern CMake with automatic dependency fetching.
 
 ### Native C++ Build
 
-You need to have `CMake` and a C++17 compiler installed.
+Requires CMake and a C++17 compiler.
 
 ```bash
-mkdir build && cd build && cmake .. -DBUILD_TESTING=ON && make -j$(nproc) && ctest
+mkdir build && cd build
+cmake .. -DBUILD_TESTING=ON
+make -j$(nproc)
+ctest --output-on-failure
 ```
 
-### WebAssembly Build
+### WebAssembly (WASM) Build
 
-To build for WebAssembly (for use in web browsers), you need the Emscripten SDK:
+Requires Emscripten SDK. Generates `libtriangulation.js` and `.wasm` for web use.
 
 ```bash
-# Install Emscripten SDK first
-# Then build with WASM support
-mkdir build_wasm && cd build_wasm && emcmake cmake .. -DBUILD_WASM=ON && make -j$(nproc)
+mkdir build_wasm && cd build_wasm
+emcmake cmake .. -DBUILD_WASM=ON
+make -j$(nproc)
 ```
 
-This generates:
+## 📦 Dependencies
 
-- `libtriangulation.js` - JavaScript wrapper with embedded or separate WASM
-- `libtriangulation.wasm` - WebAssembly binary
+The library automatically fetches these at configure time:
 
-The WASM build uses Emscripten's embind to provide a JavaScript API that mirrors the C++ interface.
+- **[mapbox/earcut.hpp](https://github.com/mapbox/earcut.hpp)**: Core triangulation.
+- **[Clipper2](https://github.com/AngusJohnson/Clipper2)**: Intersection resolution.
+- **[GoogleTest](https://github.com/google/googletest)**: Unit testing.
 
-## Algorithm Design Rationale
-
-### Why Ear Clipping + Clipper2?
-
-**Ear Clipping (mapbox/earcut.hpp):**
-
-- **High Performance**: Extremely fast for simple polygons
-- **Lightweight**: Header-only library with minimal dependencies
-- **Proven Reliability**: Battle-tested in production applications
-- **Optimal for Simple Cases**: Perfect for non-self-intersecting polygons
-
-**Clipper2 Integration:**
-
-- **Handles Complex Cases**: Resolves self-intersections that would break ear clipping
-- **Robust Geometry Processing**: Professional-grade computational geometry
-- **Maintains Topology**: Preserves proper polygon structure during resolution
-- **Future-Proof**: Extensible for additional boolean operations
-
-### Alternative Approaches Considered
-
-**Delaunay Triangulation:**
-
-- **Pros**: Higher quality triangles, better for numerical simulations
-- **Cons**: More complex, slower for simple cases, overkill for visualization
-- **Verdict**: Unnecessary complexity for this use case
-
-**Constrained Delaunay:**
-
-- **Pros**: Handles arbitrary constraints and holes
-- **Cons**: Significantly more complex implementation
-- **Verdict**: Would require major architectural changes
-
-**Pure Clipper2 Triangulation:**
-
-- **Pros**: Unified approach for all cases
-- **Cons**: Slower than earcut for simple polygons
-- **Verdict**: Our hybrid approach gets the best of both worlds
-
-The current **hybrid architecture** provides optimal performance for simple polygons while gracefully handling complex self-intersecting cases.
+---
